@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dark Mode with JavaScript</title>
+</head>
+<body id="body">
+    <h1>Dark Mode Demo</h1>
+    <p>Press the D key or click the button below.</p>
+    <button onclick="toggleMode()">Toggle Dark Mode</button>
+    <script>
+        let darkMode = false;
+        function toggleMode() {
+            if (!darkMode) {
+                document.body.style.backgroundColor = "black";
+                document.body.style.color = "white";
+                darkMode = true;
+            } else {
+                document.body.style.backgroundColor = "white";
+                document.body.style.color = "black";
+                darkMode = false;
+            }
+        }
+        document.addEventListener("keydown", function(event) {
+            if (event.key === "d" || event.key === "D") {
+                toggleMode();
+            }
+        });
+    </script>
+</body>
+</html>
