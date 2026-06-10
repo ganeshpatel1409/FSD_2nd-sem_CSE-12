@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>ARGUS — Digital Footprint Scanner</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Inter',system-ui,sans-serif;background:#080b14;color:#e2e8f0;min-height:100vh;}
+.screen{display:none;width:100%;}
+.screen.active{display:flex;flex-direction:column;}
+
+/* LANDING */
+#s-land{align-items:center;justify-content:center;min-height:100vh;text-align:center;padding:3rem 2rem;background:radial-gradient(ellipse at 50% 0%,#0d1a35 0%,#080b14 65%);}
+.eye-ring{width:80px;height:80px;margin:0 auto 1.5rem;border-radius:50%;border:2px solid #3b82f6;display:flex;align-items:center;justify-content:center;position:relative;animation:pulse-ring 2.5s ease-in-out infinite;}
+@keyframes pulse-ring{0%,100%{box-shadow:0 0 0 0 rgba(59,130,246,0.4);}50%{box-shadow:0 0 0 14px rgba(59,130,246,0);}}
+.eye-ring::before{content:'';width:32px;height:32px;border-radius:50%;background:#3b82f6;animation:pulse-core 2.5s ease-in-out infinite;}
+@keyframes pulse-core{0%,100%{opacity:1;transform:scale(1);}50%{opacity:0.5;transform:scale(0.8);}}
+.logo-title{font-size:clamp(2.4rem,6vw,4rem);font-weight:700;letter-spacing:0.18em;color:#f0f6ff;text-transform:uppercase;margin-bottom:0.5rem;}
+.logo-tag{font-size:1.05rem;color:#64748b;margin-bottom:2.5rem;font-weight:300;letter-spacing:0.02em;}
+.input-wrap{width:100%;max-width:440px;background:#0f172a;border:1px solid #1e3a5f;border-radius:14px;padding:1.6rem;margin-bottom:1rem;}
+.input-label{display:block;font-size:11px;color:#64748b;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:0.45rem;text-align:left;}
+.input-field{width:100%;background:#080b14;border:1px solid #1e3a5f;border-radius:8px;padding:0.7rem 1rem;color:#e2e8f0;font-size:0.95rem;outline:none;transition:border-color 0.2s;font-family:inherit;margin-bottom:1rem;}
+.input-field:last-of-type{margin-bottom:0;}
+.input-field:focus{border-color:#3b82f6;}
+.input-field::placeholder{color:#334155;}
+.btn-scan{width:100%;max-width:440px;background:#1d4ed8;color:#fff;border:none;border-radius:12px;padding:0.95rem 2rem;font-size:1.05rem;font-weight:600;cursor:pointer;letter-spacing:0.04em;transition:background 0.2s,transform 0.1s;font-family:inherit;}
+.btn-scan:hover{background:#2563eb;}
+.btn-scan:active{transform:scale(0.98);}
+.land-note{font-size:11px;color:#1e3a5f;margin-top:1.2rem;max-width:400px;line-height:1.6;}
+.land-features{display:flex;gap:1.5rem;margin-bottom:2.5rem;flex-wrap:wrap;justify-content:center;}
+.land-feat{font-size:0.78rem;color:#334155;display:flex;align-items:center;gap:6px;}
+.feat-dot{width:6px;height:6px;border-radius:50%;background:#1d4ed8;}
+
+/* LOADING */
+#s-load{align-items:center;justify-content:center;min-height:100vh;padding:3rem 2rem;text-align:center;background:#080b14;}
+.scan-eye-wrap{width:100px;height:100px;margin:0 auto 2rem;position:relative;}
+.scan-eye-wrap svg{width:100%;height:100%;}
+.scan-label{font-size:1.15rem;font-weight:600;color:#e2e8f0;margin-bottom:0.3rem;}
+.scan-sub{font-size:0.82rem;color:#475569;margin-bottom:2rem;font-family:monospace;}
+.progress-bar-wrap{width:100%;max-width:420px;background:#1e293b;border-radius:20px;height:5px;overflow:hidden;margin:0 auto 2.2rem;}
+.progress-bar-fill{height:100%;background:linear-gradient(90deg,#1d4ed8,#38bdf8);border-radius:20px;width:0%;transition:width 0.7s cubic-bezier(.4,0,.2,1);}
+.steps-list{list-style:none;width:100%;max-width:400px;text-align:left;margin:0 auto;}
+.step-item{display:flex;align-items:center;gap:12px;padding:0.6rem 0.9rem;border-radius:8px;font-size:0.88rem;color:#475569;transition:color 0.3s,background 0.3s;margin-bottom:0.3rem;}
+.step-item.active{color:#e2e8f0;background:#0f172a;}
+.step-item.done{color:#22c55e;}
+.step-dot{width:8px;height:8px;border-radius:50%;background:#1e293b;flex-shrink:0;transition:background 0.3s;font-size:9px;display:flex;align-items:center;justify-content:center;}
+.step-item.active .step-dot{background:#3b82f6;animation:blink 0.9s ease-in-out infinite;}
+.step-item.done .step-dot{background:#22c55e;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:0.2;}}
+
+/* DASHBOARD */
+#s-dash{flex-direction:column;min-height:100vh;}
+.dash-top{display:flex;align-items:center;justify-content:space-between;padding:1rem 2rem;border-bottom:1px solid #0f172a;background:#080b14;position:sticky;top:0;z-index:10;}
+.dash-logo{font-size:1rem;font-weight:700;color:#3b82f6;letter-spacing:0.12em;}
+.dash-user{font-size:0.82rem;color:#475569;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.dash-btns{display:flex;gap:8px;}
+.btn-sm{font-size:0.78rem;color:#64748b;background:#0f172a;border:1px solid #1e293b;border-radius:6px;padding:0.35rem 0.8rem;cursor:pointer;font-family:inherit;transition:color 0.2s,border-color 0.2s;}
+.btn-sm:hover{color:#e2e8f0;border-color:#334155;}
+.dash-body{padding:1.5rem 2rem;max-width:1100px;margin:0 auto;width:100%;}
+
+/* Shock Banner */
+.shock-banner{background:linear-gradient(135deg,#1a0808,#1a0d08);border:1px solid #7f1d1d;border-radius:12px;padding:1.2rem 1.5rem;margin-bottom:1.5rem;display:flex;align-items:flex-start;gap:14px;}
+.shock-icon{width:36px;height:36px;border-radius:50%;background:#7f1d1d;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:#ef4444;flex-shrink:0;}
+.shock-text h3{font-size:1rem;font-weight:600;color:#ef4444;margin-bottom:0.3rem;}
+.shock-text p{font-size:0.82rem;color:#991b1b;line-height:1.55;}
+
+/* Stats row */
+.stats-row{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:1.5rem;}
+.stat-card{background:#0f172a;border:1px solid #1e293b;border-radius:12px;padding:1rem 1.2rem;text-align:center;}
+.stat-card .s-label{font-size:10px;color:#475569;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:0.5rem;display:block;}
+.stat-card .s-val{font-size:1.8rem;font-weight:700;color:#e2e8f0;line-height:1;}
+.stat-card .s-unit{font-size:0.7rem;color:#475569;margin-top:0.2rem;}
+
+/* Two-col & Three-col */
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;}
+.three-col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px;}
+
+/* Section card */
+.sec-card{background:#0f172a;border:1px solid #1e293b;border-radius:12px;padding:1.1rem 1.3rem;}
+.sec-label{font-size:10px;color:#475569;text-transform:uppercase;letter-spacing:0.09em;margin-bottom:0.9rem;display:block;}
+.profile-text{font-size:0.85rem;color:#94a3b8;line-height:1.7;}
+
+/* Risk meter */
+.risk-meter{text-align:center;display:flex;flex-direction:column;align-items:center;}
+.risk-gauge-wrap{position:relative;width:120px;height:120px;margin-bottom:0.7rem;}
+.risk-gauge-wrap svg{width:100%;height:100%;}
+.risk-num-overlay{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;}
+.risk-big-num{font-size:1.8rem;font-weight:700;line-height:1;}
+.risk-unit{font-size:9px;color:#475569;}
+.risk-level-badge{font-size:0.82rem;font-weight:700;padding:0.25rem 0.8rem;border-radius:20px;margin-bottom:0.5rem;}
+.risk-quote{font-size:0.72rem;color:#475569;line-height:1.5;max-width:160px;}
+
+/* Links */
+.link-item{display:flex;align-items:center;gap:10px;padding:0.55rem 0;border-bottom:1px solid #0d131f;font-size:0.82rem;}
+.link-item:last-child{border-bottom:none;}
+.link-favicon{width:14px;height:14px;border-radius:3px;background:#1e293b;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:8px;color:#64748b;}
+.link-url{color:#60a5fa;text-decoration:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;}
+.link-url:hover{text-decoration:underline;}
+.link-src{font-size:0.7rem;color:#334155;flex-shrink:0;background:#0d131f;padding:2px 6px;border-radius:4px;}
+
+/* Entity chips */
+.chips-wrap{display:flex;flex-wrap:wrap;gap:7px;}
+.chip{background:#1e293b;border:1px solid #334155;border-radius:20px;padding:0.28rem 0.75rem;font-size:0.75rem;color:#94a3b8;display:flex;align-items:center;gap:5px;cursor:default;}
+.chip:hover{background:#263244;}
+.chip.loc{border-color:#1d4ed8;color:#93c5fd;background:#0c1a33;}
+.chip.org{border-color:#5b21b6;color:#c4b5fd;background:#130d24;}
+.chip.email{border-color:#0f766e;color:#5eead4;background:#071a18;}
+.chip.person{border-color:#854d0e;color:#fcd34d;background:#1c1004;}
+.chip.phone{border-color:#6b21a8;color:#e879f9;background:#160d20;}
+
+/* Risk factors */
+.factor-item{display:flex;align-items:center;gap:10px;padding:0.5rem 0;border-bottom:1px solid #0d131f;font-size:0.83rem;}
+.factor-item:last-child{border-bottom:none;}
+.factor-badge{width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;flex-shrink:0;}
+.f-danger{background:#7f1d1d;color:#ef4444;}
+.f-warn{background:#78350f;color:#f59e0b;}
+.f-ok{background:#14532d;color:#22c55e;}
+
+/* Recommendations */
+.rec-item{display:flex;align-items:flex-start;gap:10px;padding:0.6rem 0.9rem;margin-bottom:7px;background:#051a10;border:1px solid #14532d;border-radius:8px;font-size:0.82rem;color:#86efac;line-height:1.5;}
+.rec-icon{flex-shrink:0;font-size:14px;margin-top:1px;color:#22c55e;}
+.rec-item:last-child{margin-bottom:0;}
+
+/* Bottom bar */
+.bottom-btns{display:flex;gap:12px;margin-top:1.5rem;padding-top:1.5rem;border-top:1px solid #0f172a;}
+.btn-primary{flex:1;background:#1d4ed8;color:#fff;border:none;border-radius:10px;padding:0.75rem;font-size:0.88rem;cursor:pointer;font-family:inherit;font-weight:600;transition:background 0.2s;}
+.btn-primary:hover{background:#2563eb;}
+.btn-secondary{flex:1;background:#0f172a;color:#64748b;border:1px solid #1e293b;border-radius:10px;padding:0.75rem;font-size:0.88rem;cursor:pointer;font-family:inherit;font-weight:500;transition:all 0.2s;}
+.btn-secondary:hover{color:#e2e8f0;border-color:#334155;}
+
+.disclaimer{font-size:10px;color:#1e293b;text-align:center;padding:1rem 2rem 1.5rem;line-height:1.6;}
+
+/* Responsive */
+@media(max-width:700px){
+  .stats-row{grid-template-columns:1fr 1fr;}
+  .two-col,.three-col{grid-template-columns:1fr;}
+  .dash-body{padding:1rem;}
+  .dash-top{padding:0.9rem 1rem;}
+  .shock-banner{flex-direction:column;gap:10px;}
+}
+@media(max-width:400px){
+  .stats-row{grid-template-columns:1fr 1fr;}
+}
+
+/* Toast */
+.toast{position:fixed;bottom:2rem;left:50%;transform:translateX(-50%) translateY(60px);background:#1d4ed8;color:#fff;padding:0.7rem 1.5rem;border-radius:10px;font-size:0.85rem;opacity:0;transition:opacity 0.3s,transform 0.3s;pointer-events:none;z-index:999;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+</style>
+</head>
+<body>
+
+<!-- LANDING -->
+<div id="s-land" class="screen active">
+  <div class="eye-ring"></div>
+  <div class="logo-title">ARGUS</div>
+  <div class="logo-tag">See yourself like a stranger does.</div>
+  <div class="land-features">
+    <span class="land-feat"><span class="feat-dot"></span>Public data only</span>
+    <span class="land-feat"><span class="feat-dot"></span>AI-powered analysis</span>
+    <span class="land-feat"><span class="feat-dot"></span>Privacy recommendations</span>
+    <span class="land-feat"><span class="feat-dot"></span>Instant results</span>
+  </div>
+  <div class="input-wrap">
+    <label class="input-label">Full Name *</label>
+    <input class="input-field" id="inp-name" type="text" placeholder="e.g. Rahul Sharma" autocomplete="name"/>
+    <label class="input-label" style="margin-top:0.2rem">Username / Handle</label>
+    <input class="input-field" id="inp-user" type="text" placeholder="e.g. rahulsharma" autocomplete="off"/>
+    <label class="input-label" style="margin-top:0.2rem">Email (optional)</label>
+    <input class="input-field" id="inp-email" type="email" placeholder="e.g. rahul@gmail.com" autocomplete="email"/>
+  </div>
+  <button class="btn-scan" id="btn-scan-start">&#x1F50D;&nbsp; Scan My Digital Footprint</button>
+  <p class="land-note">&#x1F512; ARGUS only analyzes publicly available information. No login scraping. No private data access. Built for privacy awareness.</p>
+</div>
+
+<!-- LOADING -->
+<div id="s-load" class="screen">
+  <div class="scan-eye-wrap">
+    <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="50" cy="50" r="46" stroke="#1e3a5f" stroke-width="1.5"/>
+      <circle cx="50" cy="50" r="36" stroke="#1d4ed8" stroke-width="1" stroke-dasharray="5 4">
+        <animateTransform attributeName="transform" type="rotate" from="0 50 50" to="360 50 50" dur="3s" repeatCount="indefinite"/>
+      </circle>
+      <circle cx="50" cy="50" r="24" stroke="#3b82f6" stroke-width="1" stroke-dasharray="3 6" opacity="0.5">
+        <animateTransform attributeName="transform" type="rotate" from="360 50 50" to="0 50 50" dur="5s" repeatCount="indefinite"/>
+      </circle>
+      <circle cx="50" cy="50" r="14" fill="#0f172a" stroke="#1d4ed8" stroke-width="1.5"/>
+      <circle cx="50" cy="50" r="8" fill="#3b82f6">
+        <animate attributeName="opacity" values="1;0.3;1" dur="1.4s" repeatCount="indefinite"/>
+        <animate attributeName="r" values="8;6;8" dur="1.4s" repeatCount="indefinite"/>
+      </circle>
+      <circle cx="50" cy="50" r="3" fill="#bfdbfe"/>
+    </svg>
+  </div>
+  <div class="scan-label" id="scan-label">Initializing scan…</div>
+  <div class="scan-sub" id="scan-sub">Connecting to public data sources</div>
+  <div class="progress-bar-wrap">
+    <div class="progress-bar-fill" id="prog-fill"></div>
+  </div>
+  <ul class="steps-list" id="steps-list">
+    <li class="step-item" data-step="0"><span class="step-dot"></span>Searching public sources</li>
+    <li class="step-item" data-step="1"><span class="step-dot"></span>Scanning social profiles</li>
+    <li class="step-item" data-step="2"><span class="step-dot"></span>Extracting named entities</li>
+    <li class="step-item" data-step="3"><span class="step-dot"></span>Building your digital identity</li>
+    <li class="step-item" data-step="4"><span class="step-dot"></span>Calculating exposure risks</li>
+    <li class="step-item" data-step="5"><span class="step-dot"></span>Generating recommendations</li>
+  </ul>
+</div>
+
+<!-- DASHBOARD -->
+<div id="s-dash" class="screen">
+  <div class="dash-top">
+    <div class="dash-logo">&#x1F441; ARGUS</div>
+    <div class="dash-user" id="dash-username">—</div>
+    <div class="dash-btns">
+      <button class="btn-sm" id="btn-rescan">&#x1F504; Scan Again</button>
+      <button class="btn-sm" id="btn-export">&#x1F4E5; Export</button>
+    </div>
+  </div>
+
+  <div class="dash-body">
+
+    <!-- Shock banner -->
+    <div class="shock-banner">
+      <div class="shock-icon">!</div>
+      <div class="shock-text">
+        <h3>A stranger can find this about you in under 5 seconds.</h3>
+        <p>Your name, location, email, and social presence are indexed across multiple public platforms and searchable by anyone — right now, without any special tools.</p>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-row">
+      <div class="stat-card">
+        <span class="s-label">Sources Found</span>
+        <div class="s-val" id="stat-sources">—</div>
+        <div class="s-unit">public pages</div>
+      </div>
+      <div class="stat-card">
+        <span class="s-label">Risk Score</span>
+        <div class="s-val" id="stat-risk" style="color:#ef4444">—</div>
+        <div class="s-unit" id="stat-risk-label">out of 100</div>
+      </div>
+      <div class="stat-card">
+        <span class="s-label">Entities Found</span>
+        <div class="s-val" id="stat-entities" style="color:#f59e0b">—</div>
+        <div class="s-unit">data points</div>
+      </div>
+      <div class="stat-card">
+        <span class="s-label">Platforms</span>
+        <div class="s-val" id="stat-platforms" style="color:#60a5fa">—</div>
+        <div class="s-unit">profiles indexed</div>
+      </div>
+    </div>
+
+    <!-- Profile + Risk -->
+    <div class="two-col">
+      <div class="sec-card">
+        <span class="sec-label">&#x1F916; AI-Generated Profile Summary</span>
+        <p class="profile-text" id="profile-text"></p>
+      </div>
+      <div class="sec-card risk-meter">
+        <span class="sec-label">&#x26A0; Privacy Risk Score</span>
+        <div class="risk-gauge-wrap">
+          <svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" id="risk-svg">
+            <circle cx="60" cy="60" r="50" stroke="#1e293b" stroke-width="8" fill="none"/>
+            <circle cx="60" cy="60" r="50" stroke="#ef4444" stroke-width="8" fill="none"
+              stroke-linecap="round"
+              stroke-dasharray="314"
+              stroke-dashoffset="314"
+              transform="rotate(-90 60 60)"
+              id="risk-arc"/>
+          </svg>
+          <div class="risk-num-overlay">
+            <div class="risk-big-num" id="risk-num">0</div>
+            <div class="risk-unit">/100</div>
+          </div>
+        </div>
+        <div class="risk-level-badge" id="risk-level-badge">—</div>
+        <div class="risk-quote">"A stranger could identify your location and social presence in seconds."</div>
+      </div>
+    </div>
+
+    <!-- Links + Factors -->
+    <div class="two-col">
+      <div class="sec-card">
+        <span class="sec-label">&#x1F517; Public Links Found</span>
+        <div id="links-list"></div>
+      </div>
+      <div class="sec-card">
+        <span class="sec-label">&#x1F4CB; Risk Breakdown</span>
+        <div id="factors-list"></div>
+      </div>
+    </div>
+
+    <!-- Data Exposure chips -->
+    <div class="sec-card" style="margin-bottom:12px">
+      <span class="sec-label">&#x1F9E9; Data Exposure Map</span>
+      <div class="chips-wrap" id="chips-wrap"></div>
+    </div>
+
+    <!-- Recommendations -->
+    <div class="sec-card">
+      <span class="sec-label">&#x1F6E1; Recommendations — Fix Your Footprint</span>
+      <div id="recs-list"></div>
+    </div>
+
+    <div class="bottom-btns">
+      <button class="btn-primary" id="btn-back">&#x1F3E0; Back to Home</button>
+      <button class="btn-secondary" id="btn-export2">&#x1F4BE; Download Report</button>
+    </div>
+
+  </div>
+
+  <div class="disclaimer">
+    &#x1F512; ARGUS only analyzes publicly available information. No login scraping. No private data access. This tool is built for personal privacy awareness — not surveillance. Always obtain explicit consent before scanning another person.
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+const $ = id => document.getElementById(id);
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  $(id).classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+function showToast(msg) {
+  const t = $('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+// ── Data Generator ──────────────────────────────────────────────────────────
+function generateData(name, username, email) {
+  const n = name || 'Demo User';
+  const u = username || n.toLowerCase().replace(/\s+/g, '.');
+  const e = email || (u + '@gmail.com');
+  const score = Math.floor(Math.random() * 30) + 55;
+  const level = score >= 70 ? 'HIGH' : score >= 45 ? 'MEDIUM' : 'LOW';
+  const lc = score >= 70 ? '#ef4444' : score >= 45 ? '#f59e0b' : '#22c55e';
+  const lb = score >= 70 ? '#1a0808' : score >= 45 ? '#1c1004' : '#051a10';
+  const lbr = score >= 70 ? '#7f1d1d' : score >= 45 ? '#78350f' : '#14532d';
+
+  const firstName = n.split(' ')[0];
+  const platforms = ['LinkedIn', 'GitHub', 'Twitter', 'Medium', 'Reddit', 'Dev.to'];
+  const numPlatforms = Math.floor(Math.random() * 2) + 3;
+  const activePlatforms = platforms.slice(0, numPlatforms);
+
+  return {
+    name: n, username: u, email: e, score, level,
+    levelColor: lc, levelBg: lb, levelBorder: lbr,
+    sources: Math.floor(Math.random() * 4) + 5,
+    entities: Math.floor(Math.random() * 10) + 10,
+    platforms: numPlatforms,
+    summary: `Multiple public profiles detected for ${n} across ${activePlatforms.join(', ')}. Your name appears in ${Math.floor(Math.random()*5)+5} indexed sources. Location data, organizational affiliations, and contact information are publicly accessible to anyone performing a basic search. An AI analysis of your footprint suggests a ${level.toLowerCase()} privacy exposure level — meaning a determined individual could build a detailed profile within minutes.`,
+    links: [
+      { url: `linkedin.com/in/${u}`, src: 'LinkedIn' },
+      { url: `github.com/${u}`, src: 'GitHub' },
+      { url: `twitter.com/${u}`, src: 'Twitter' },
+      { url: `medium.com/@${u}`, src: 'Medium' },
+      { url: `${u}.dev`, src: 'Personal' },
+      { url: `reddit.com/user/${u}`, src: 'Reddit' },
+    ].slice(0, numPlatforms + 1),
+    chips: [
+      { label: 'India', cls: 'loc', icon: '📍' },
+      { label: 'Mumbai', cls: 'loc', icon: '📍' },
+      { label: e, cls: 'email', icon: '📧' },
+      { label: 'TechCorp Ltd', cls: 'org', icon: '🏢' },
+      { label: 'IIT Delhi', cls: 'org', icon: '🎓' },
+      { label: n, cls: 'person', icon: '👤' },
+      { label: firstName + ' Dev', cls: 'person', icon: '👤' },
+      { label: '+91 98765 XXXXX', cls: 'phone', icon: '📞' },
+    ],
+    factors: [
+      { label: 'Email exposed publicly', state: 'danger' },
+      { label: 'Social profiles indexed', state: 'danger' },
+      { label: 'Location data visible', state: 'warn' },
+      { label: 'Organization data exposed', state: 'warn' },
+      { label: 'Data broker listing detected', state: score > 65 ? 'danger' : 'warn' },
+      { label: 'Profile photos indexed', state: 'warn' },
+      { label: 'Phone number hidden', state: 'ok' },
+      { label: 'Home address not found', state: 'ok' },
+    ],
+    recs: [
+      'Request removal from data broker sites: Spokeo, Whitepages, BeenVerified, Intelius.',
+      'Use email aliases (SimpleLogin, Apple Hide My Email) to protect your real address.',
+      'Review and restrict visibility on LinkedIn, GitHub, Twitter and all social platforms.',
+      'Disable location tagging on all social posts and review app permissions.',
+      'Use different usernames across platforms to prevent cross-platform profiling.',
+      'Set up Google Alerts for your name to monitor future exposure.',
+      'Enable two-factor authentication (2FA) on all online accounts immediately.',
+      'Use a VPN to prevent IP-based location tracking.',
+    ],
+  };
+}
+
+// ── Loading Sequence ────────────────────────────────────────────────────────
+function runLoader(cb) {
+  const steps = document.querySelectorAll('.step-item');
+  const labels = [
+    ['Searching public sources…', 'Querying Google, Bing, DuckDuckGo indexes'],
+    ['Scanning social profiles…', 'LinkedIn · GitHub · Twitter · Reddit'],
+    ['Extracting named entities…', 'Running NER model (dslim/bert-base-NER)'],
+    ['Building your digital identity…', 'Aggregating discovered data points'],
+    ['Calculating exposure risks…', 'Scoring across 8 risk vectors'],
+    ['Generating recommendations…', 'Finalizing privacy action plan'],
+  ];
+  const fill = $('prog-fill');
+  fill.style.width = '3%';
+  let i = 0;
+
+  const tick = setInterval(() => {
+    if (i < steps.length) {
+      if (i > 0) {
+        steps[i-1].classList.remove('active');
+        steps[i-1].classList.add('done');
+      }
+      steps[i].classList.add('active');
+      $('scan-label').textContent = labels[i][0];
+      $('scan-sub').textContent = labels[i][1];
+      fill.style.width = (((i + 1) / steps.length) * 100) + '%';
+      i++;
+    } else {
+      clearInterval(tick);
+      steps[steps.length - 1].classList.remove('active');
+      steps[steps.length - 1].classList.add('done');
+      fill.style.width = '100%';
+      setTimeout(cb, 500);
+    }
+  }, 620);
+}
+
+// ── Risk Arc Animation ──────────────────────────────────────────────────────
+function animateRisk(score, color) {
+  const arc = $('risk-arc');
+  const circumference = 314;
+  const offset = circumference - (score / 100) * circumference;
+  arc.style.stroke = color;
+  arc.style.strokeDashoffset = circumference;
+
+  let current = 0;
+  const numEl = $('risk-num');
+  numEl.style.color = color;
+  const step = () => {
+    current += 2;
+    if (current > score) current = score;
+    const o = circumference - (current / 100) * circumference;
+    arc.style.strokeDashoffset = o;
+    numEl.textContent = current;
+    if (current < score) requestAnimationFrame(step);
+  };
+  setTimeout(() => requestAnimationFrame(step), 300);
+}
+
+// ── Render Dashboard ────────────────────────────────────────────────────────
+function renderDashboard(d) {
+  $('dash-username').textContent = d.name + ' — Scan Complete';
+  $('stat-sources').textContent = d.sources;
+  $('stat-risk').textContent = d.score;
+  $('stat-risk').style.color = d.levelColor;
+  $('stat-risk-label').textContent = d.level + ' risk';
+  $('stat-entities').textContent = d.entities;
+  $('stat-platforms').textContent = d.platforms;
+  $('profile-text').textContent = d.summary;
+
+  // Risk badge
+  const badge = $('risk-level-badge');
+  badge.textContent = d.level + ' RISK';
+  badge.style.color = d.levelColor;
+  badge.style.background = d.levelBg;
+  badge.style.border = '1px solid ' + d.levelBorder;
+
+  // Animate arc
+  animateRisk(d.score, d.levelColor);
+
+  // Links
+  const srcIcons = { LinkedIn:'in', GitHub:'gh', Twitter:'tw', Medium:'me', Personal:'www', Reddit:'re', 'Dev.to':'dev' };
+  $('links-list').innerHTML = d.links.map(l =>
+    `<div class="link-item">
+      <div class="link-favicon">${(srcIcons[l.src]||'?')}</div>
+      <a class="link-url" href="https://${l.url}" target="_blank" rel="noopener">${l.url}</a>
+      <span class="link-src">${l.src}</span>
+    </div>`
+  ).join('');
+
+  // Chips
+  $('chips-wrap').innerHTML = d.chips.map(c =>
+    `<span class="chip ${c.cls}">${c.icon} ${c.label}</span>`
+  ).join('');
+
+  // Factors
+  const iconMap = { danger: '✕', warn: '!', ok: '✓' };
+  const clsMap  = { danger: 'f-danger', warn: 'f-warn', ok: 'f-ok' };
+  const colMap  = { danger: '#ef4444', warn: '#f59e0b', ok: '#22c55e' };
+  $('factors-list').innerHTML = d.factors.map(f =>
+    `<div class="factor-item">
+      <span class="factor-badge ${clsMap[f.state]}">${iconMap[f.state]}</span>
+      <span style="color:${colMap[f.state]}">${f.label}</span>
+    </div>`
+  ).join('');
+
+  // Recs
+  $('recs-list').innerHTML = d.recs.map(r =>
+    `<div class="rec-item"><span class="rec-icon">→</span>${r}</div>`
+  ).join('');
+}
+
+// ── Reset loader ──────────────────────────────────────────────────────────────
+function resetLoader() {
+  document.querySelectorAll('.step-item').forEach(s => s.classList.remove('active','done'));
+  $('prog-fill').style.width = '0%';
+  $('scan-label').textContent = 'Initializing scan…';
+  $('scan-sub').textContent = 'Connecting to public data sources';
+}
+
+// ── Events ───────────────────────────────────────────────────────────────────
+$('btn-scan-start').onclick = () => {
+  const name  = $('inp-name').value.trim();
+  const user  = $('inp-user').value.trim();
+  const email = $('inp-email').value.trim();
+  if (!name) { showToast('Please enter your name to continue.'); return; }
+  const data = generateData(name, user, email);
+  resetLoader();
+  showScreen('s-load');
+  runLoader(() => {
+    renderDashboard(data);
+    showScreen('s-dash');
+  });
+};
+
+function goHome() {
+  $('inp-name').value = '';
+  $('inp-user').value = '';
+  $('inp-email').value = '';
+  resetLoader();
+  showScreen('s-land');
+}
+
+$('btn-rescan').onclick = goHome;
+$('btn-back').onclick   = goHome;
+
+const exportFn = () => {
+  showToast('In the full build, this generates a downloadable PDF privacy report.');
+};
+$('btn-export').onclick  = exportFn;
+$('btn-export2').onclick = exportFn;
+
+[$('inp-name'),$('inp-user'),$('inp-email')].forEach(el => {
+  el.addEventListener('keydown', e => { if(e.key==='Enter') $('btn-scan-start').click(); });
+});
+</script>
+</body>
+</html>
